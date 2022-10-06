@@ -76,7 +76,7 @@ contract TransitFinanceRefund {
     function claim() public checkClaimAndNonReentrant {
         require(!_claimed[msg.sender], "Refunded");
         refund memory thisRefund = _refund[msg.sender];
-        require(thisRefund.amount > 0, "No assets refund");
+        require(thisRefund.amount > 0, "No accessible refund");
         _claimed[msg.sender] = true;
         if (thisRefund.token == address(0)) {
             payable(thisRefund.user).transfer(thisRefund.amount);
@@ -111,7 +111,7 @@ contract TransitFinanceRefund {
 
     modifier checkClaimAndNonReentrant() {
         require(block.timestamp >= claimStartTime && claimStartTime != 0, "Coming soon");
-        require(!claimPause, "Refund suspension");
+        require(!claimPause, "Refund suspended");
         require(_status != _ENTERED, "Reentrant call");
         _status = _ENTERED;
         _;
