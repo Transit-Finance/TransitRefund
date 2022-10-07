@@ -101,7 +101,7 @@ contract TransitFinanceRefund {
     function emergencyWithdraw(address[] memory tokens, uint256[] memory amounts, address recipient) external onlyExecutor {
         require(tokens.length == amounts.length, "Invalid data");
         require(claimPause, "Refunding");
-        for (uint256 i; i <= tokens.length; i++) {
+        for (uint256 i; i < tokens.length; i++) {
             if (tokens[i] == address(0)) {
                 TransferHelper.safeTransferETH(recipient, amounts[i]);
             } else {
