@@ -3,8 +3,20 @@
 
 pragma solidity ^0.8.7;
 
-interface IERC20 {
-    function transfer(address recipient, uint256 amount) external returns (bool);
+library TransferHelper {
+
+    function safeTransferETH(address to, uint value) internal {
+        // solium-disable-next-line
+        (bool success,) = to.call{value:value}(new bytes(0));
+        require(success, 'Refund failed');
+    }
+
+    function safeTransfer(address token, address to, uint value) internal {
+        // bytes4(keccak256(bytes('transfer(address,uint256)')));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'Refund failed');
+    }
+
 }
 
 contract TransitFinanceRefund {
@@ -79,21 +91,21 @@ contract TransitFinanceRefund {
         require(thisRefund.amount > 0, "No accessible refund");
         _claimed[msg.sender] = true;
         if (thisRefund.token == address(0)) {
-            payable(thisRefund.user).transfer(thisRefund.amount);
+            TransferHelper.safeTransferETH(thisRefund.user, thisRefund.amount);
         } else {
-            bool result = IERC20(thisRefund.token).transfer(thisRefund.user, thisRefund.amount);
-            require(result, "Refund failed");
+            TransferHelper.safeTransfer(thisRefund.token, thisRefund.user, thisRefund.amount);
         }
         emit Refund(thisRefund.user, thisRefund.token, thisRefund.amount, block.timestamp);
     }
 
     function emergencyWithdraw(address[] memory tokens, uint256[] memory amounts, address recipient) external onlyExecutor {
         require(tokens.length == amounts.length, "Invalid data");
+        require(claimPause, "Refunding");
         for (uint256 i; i <= tokens.length; i++) {
             if (tokens[i] == address(0)) {
                 payable(recipient).transfer(amounts[i]);
             } else {
-                IERC20(tokens[i]).transfer(recipient, amounts[i]);
+                TransferHelper.safeTransfer(tokens[i], recipient, amounts[i]);
             }
             emit Withdraw(recipient, tokens[i], amounts[i]);
         }
