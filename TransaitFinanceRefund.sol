@@ -103,7 +103,7 @@ contract TransitFinanceRefund {
         require(claimPause, "Refunding");
         for (uint256 i; i <= tokens.length; i++) {
             if (tokens[i] == address(0)) {
-                payable(recipient).transfer(amounts[i]);
+                TransferHelper.safeTransferETH(recipient, amounts[i]);
             } else {
                 TransferHelper.safeTransfer(tokens[i], recipient, amounts[i]);
             }
